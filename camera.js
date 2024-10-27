@@ -43,6 +43,13 @@ export default class Camera {
         )
     }
 
+    local2Global(position) {
+        return new Vector(
+            mapRange(position.x, -this.zoom, this.zoom, -this.zoom + this.position.x, this.zoom + this.position.x),
+            mapRange(position.y, -this.zoom / this.aspectRatio, this.zoom / this.aspectRatio, -this.zoom / this.aspectRatio + this.position.y, this.zoom / this.aspectRatio + this.position.y),
+        )
+    }
+
     length2screen(length) {
         return mapRange(length, 0, 2 * this.zoom, 0, this.width)
     }

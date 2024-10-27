@@ -5,15 +5,21 @@ import { Shift, Create, AnimateValue } from "./animation.js"
 
 // just some test usage
 const canvas = document.getElementById('canvas')
-const screen = new Screen(canvas)
+const s = new Screen(canvas)
 
-screen.play([
-    new Create(new Line(new Vector(screen.camera.left, 0), new Vector(screen.camera.right, 0), 0.01), 30),
-    new Create(new Line(new Vector(0, screen.camera.top), new Vector(0, screen.camera.bottom), 0.01), 30)
+s.play([
+    new Create(new Line(new Vector(s.camera.left, 0), new Vector(s.camera.right, 0), 0.01), 30),
+    new Create(new Line(new Vector(0, s.camera.top), new Vector(0, s.camera.bottom), 0.01), 30)
 ])
 
-screen.play(new Create(new Circle()))
+let circle = new Circle()
 
+s.play(new Create(circle))
 
+function update(s) {
+    s.play(new Shift(circle, s.GlobalMousePosition))
+}
 
-screen.run()
+s.addClickUpdater(update)
+
+s.run()
