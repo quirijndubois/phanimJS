@@ -1,22 +1,19 @@
 import Screen from "./screen.js"
-import { Circle, Line } from "./phobject.js"
+import { Circle, Line, Polygon } from "./phobject.js"
 import { Vector } from "./vector.js"
-import { Shift } from "./animation.js"
+import { Shift, Create, AnimateValue } from "./animation.js"
 
 // just some test usage
 const canvas = document.getElementById('canvas')
 const screen = new Screen(canvas)
 
-const circle = new Circle(new Vector(0, 0), 1)
-const line = new Line(new Vector(-2, 0), new Vector(2, 0))
+screen.play([
+    new Create(new Line(new Vector(screen.camera.left, 0), new Vector(screen.camera.right, 0), 0.01), 30),
+    new Create(new Line(new Vector(0, screen.camera.top), new Vector(0, screen.camera.bottom), 0.01), 30)
+])
 
-screen.add(circle)
-screen.add(line.setColor('red'))
+screen.play(new Create(new Circle()))
 
-let animation = new Shift(circle, new Vector(1, 0), 60)
-let animation2 = new Shift(line, new Vector(0, 1), 60)
 
-screen.play(animation)
-screen.play(animation2)
 
 screen.run()

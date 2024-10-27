@@ -1,6 +1,8 @@
 import { Vector, add, sub } from "./vector.js"
 import Camera from "./camera.js"
-import { Circle, Line } from "./phobject.js"
+import { Circle, Line, Polygon } from "./phobject.js"
+import { lerp2d } from "./functions.js"
+import { Shift, Create, AnimateValue } from "./animation.js"
 
 
 export default class Screen {
@@ -26,18 +28,32 @@ export default class Screen {
         const screenPosition = this.camera.coords2screen(circle.position)
         const screenRadius = this.camera.length2screen(circle.radius)
 
-        this.ctx.fillStyle = circle.color
+        this.ctx.fillStyle = circle.fillColor
+        this.ctx.strokeStyle = circle.strokeColor
+        this.ctx.lineWidth = this.camera.length2screen(circle.strokeWidth)
+
         this.ctx.beginPath()
-        this.ctx.arc(screenPosition.x, screenPosition.y, screenRadius, 0, 2 * Math.PI)
+        this.ctx.arc(screenPosition.x, screenPosition.y, screenRadius, 0, 2 * Math.PI * circle.factor)
         this.ctx.fill()
+        this.ctx.stroke()
+    }
+
+    resetCamera() {
+        this.play([
+            new Shift(this.camera, new Vector(0, 0)),
+            new AnimateValue((v) => this.camera.setZoom(v), this.camera.zoom, 5)
+        ])
     }
 
     drawLine(line) {
         const thickness = this.camera.length2screen(line.strokeWidth)
-        const screenPosition = this.camera.coords2screen(line.position)
-        const screenStart = this.camera.coords2screen(line.start)
-        const screenEnd = this.camera.coords2screen(line.end)
 
+        const start = add(line.start, line.position)
+        let end = add(line.end, line.position)
+        end = lerp2d(start, end, line.factor)
+
+        const screenStart = this.camera.coords2screen(start)
+        const screenEnd = this.camera.coords2screen(end)
         this.ctx.strokeStyle = line.color
         this.ctx.lineWidth = thickness
         this.ctx.beginPath()
@@ -46,11 +62,28 @@ export default class Screen {
         this.ctx.stroke()
     }
 
+    drawPolygon(polygon) {
+        const screenPoints = polygon.vertices.map(point => this.camera.coords2screen(point))
+        this.ctx.fillStyle = polygon.fillColor
+        this.ctx.beginPath()
+        this.ctx.strokeStyle = polygon.strokeColor
+        this.ctx.lineWidth = this.camera.length2screen(polygon.strokeWidth)
+        this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
+        for (let i = 1; i < screenPoints.length; i++) {
+            this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+        }
+        this.ctx.lineTo(screenPoints[0].x, screenPoints[0].y)
+        this.ctx.fill()
+        this.ctx.stroke()
+    }
+
     draw(phobject) {
         if (phobject instanceof Circle) {
             this.drawCircle(phobject)
         } else if (phobject instanceof Line) {
             this.drawLine(phobject)
+        } else if (phobject instanceof Polygon) {
+            this.drawPolygon(phobject)
         }
     }
 
@@ -59,13 +92,35 @@ export default class Screen {
     }
 
     play(animation) {
-        this.animations.push(animation)
+        if (animation instanceof Array) {
+            this.animations.push(animation)
+        }
+        else {
+            this.animations.push([animation])
+        }
     }
 
+
     updateAnimations() {
-        this.animations.forEach(animation => {
+        if (this.animations.length == 0) {
+            return
+        }
+        this.animations[0].forEach(animation => {
             animation.update()
+
+            if (animation.mode == 'add') {
+                if (this.phobjects.indexOf(animation.phobject) == -1) {
+                    this.add(animation.phobject)
+                }
+            }
+
+            if (animation.frame >= animation.duration) {
+                this.animations[0].splice(this.animations[0].indexOf(animation), 1)
+            }
         })
+        if (this.animations[0].length == 0) {
+            this.animations.shift()
+        }
     }
 
     clear() {
@@ -73,7 +128,7 @@ export default class Screen {
     }
 
     updateScroll(x) {
-        this.camera.zoom *= 1 + x / 1000
+        this.camera.setZoom(this.camera.zoom * (1 + x / 1000))
     }
 
     update() {
@@ -88,9 +143,8 @@ export default class Screen {
 
         if (this.dragging && this.dragStart) {
             const delta = sub(this.dragStart, this.LocalMousePosition)
-            this.camera.position = this.cameraDragStart.add(delta)
+            this.camera.setPosition(this.cameraDragStart.add(delta))
         }
-
     }
 
     run() {
@@ -117,6 +171,12 @@ export default class Screen {
         window.addEventListener('mouseup', e => {
             this.dragging = false
             this.dragStart = null
+        })
+        // on pressing r
+        window.addEventListener('keydown', e => {
+            if (e.key == 'r') {
+                this.resetCamera()
+            }
         })
     }
 }

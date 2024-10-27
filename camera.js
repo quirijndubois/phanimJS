@@ -1,17 +1,25 @@
 import { Vector } from "./vector.js"
-import {mapRange} from "./functions.js"
+import { mapRange } from "./functions.js"
 
 export default class Camera {
-    constructor(width, height, position = new Vector(0, 0), zoom = 10) {
+    constructor(width, height, position = new Vector(0, 0), zoom = 5) {
         this.position = position
         this.zoom = zoom
         this.width = width
         this.height = height
         this.aspectRatio = width / height
+        this.calculateBounds()
     }
 
     setPosition(position) {
         this.position = position
+        this.calculateBounds()
+        return this
+    }
+
+    setZoom(zoom) {
+        this.zoom = zoom
+        this.calculateBounds()
         return this
     }
 
@@ -37,5 +45,12 @@ export default class Camera {
 
     length2screen(length) {
         return mapRange(length, 0, 2 * this.zoom, 0, this.width)
+    }
+
+    calculateBounds() {
+        this.left = this.position.x - this.zoom
+        this.right = this.position.x + this.zoom
+        this.top = this.position.y - this.zoom / this.aspectRatio
+        this.bottom = this.position.y + this.zoom / this.aspectRatio
     }
 }
