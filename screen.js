@@ -11,9 +11,9 @@ export default class Screen {
         canvas.height = window.innerHeight
         this.width = canvas.width
         this.height = canvas.height
-        this.backgroundColor = 'rgb(0, 10, 30)'
 
         this.phobjects = []
+        this.animations = []
 
         this.camera = new Camera(this.width, this.height)
 
@@ -58,9 +58,18 @@ export default class Screen {
         this.phobjects.push(phobject)
     }
 
-    setBackground() {
-        this.ctx.fillStyle = this.backgroundColor
-        this.ctx.fillRect(0, 0, this.width, this.height)
+    play(animation) {
+        this.animations.push(animation)
+    }
+
+    updateAnimations() {
+        this.animations.forEach(animation => {
+            animation.update()
+        })
+    }
+
+    clear() {
+        this.ctx.clearRect(0, 0, this.width, this.height)
     }
 
     updateScroll(x) {
@@ -68,7 +77,10 @@ export default class Screen {
     }
 
     update() {
-        this.setBackground()
+
+        this.updateAnimations()
+
+        this.clear()
 
         this.phobjects.forEach(phobject => {
             this.draw(phobject)

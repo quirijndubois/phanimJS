@@ -1,5 +1,5 @@
 import { Vector } from "./vector.js"
-import mapRange from "./functions.js"
+import {mapRange} from "./functions.js"
 
 export default class Camera {
     constructor(width, height, position = new Vector(0, 0), zoom = 10) {
