@@ -158,7 +158,6 @@ export default class Screen {
     }
 
     update() {
-
         this.LocalMousePosition = this.camera.screen2Local(this.ScreenMousePosition)
         this.GlobalMousePosition = this.camera.screen2Global(this.ScreenMousePosition)
 
@@ -189,7 +188,6 @@ export default class Screen {
             this.handleScroll(e.deltaY)
         })
 
-        // on left mousebutton
         window.addEventListener('mousemove', e => {
             this.ScreenMousePosition = new Vector(e.clientX, e.clientY)
 
@@ -199,11 +197,29 @@ export default class Screen {
                 }
             }
         })
+
+        window.addEventListener('touchmove', e => {
+            const touch = e.touches[0]
+            this.ScreenMousePosition = new Vector(touch.clientX, touch.clientY)
+            if (this.dragStart) {
+                if (sub(this.LocalMousePosition, this.dragStart).magnitude() > (.01 * this.camera.zoom)) {
+                    this.dragging = true
+                }
+            }
+        })
+
         window.addEventListener('mousedown', e => {
             this.dragStarted = true
             this.dragStart = this.LocalMousePosition
             this.cameraDragStart = new Vector(this.camera.position.x, this.camera.position.y)
         })
+        window.addEventListener('touchstart', e => {
+            const touch = e.touches[0]
+            this.dragStarted = true
+            this.dragStart = this.camera.screen2Local(new Vector(touch.clientX, touch.clientY))
+            this.cameraDragStart = new Vector(this.camera.position.x, this.camera.position.y)
+        })
+
         window.addEventListener('mouseup', e => {
             if (!this.dragging) {
                 this.handleClick()
@@ -212,10 +228,20 @@ export default class Screen {
             this.dragStarted = false
             this.dragStart = null
         })
+        window.addEventListener('touchend', e => {
+            if (!this.dragging) {
+                this.handleClick()
+            }
+            this.dragging = false
+            this.dragStarted = false
+            this.dragStart = null
+        })
+
         window.addEventListener('keydown', e => {
             if (e.key == 'r') {
                 this.resetCamera()
             }
         })
+
     }
 }
