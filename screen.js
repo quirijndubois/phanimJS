@@ -1,6 +1,6 @@
 import { Vector, add, sub } from "./vector.js"
 import Camera from "./camera.js"
-import { Circle, Line, Polygon } from "./phobject.js"
+import { Circle, Line, Polygon, Curve } from "./phobject.js"
 import { lerp2d } from "./functions.js"
 import { Shift, Create, AnimateValue } from "./animation.js"
 
@@ -29,6 +29,13 @@ export default class Screen {
         this.ScreenMousePosition = new Vector(0, 0)
     }
 
+    resetCamera() {
+        this.play([
+            new Shift(this.camera, new Vector(0, 0)),
+            new AnimateValue((v) => this.camera.setZoom(v), this.camera.zoom, 5)
+        ])
+    }
+
     drawCircle(circle) {
         const screenPosition = this.camera.coords2screen(circle.position)
         const screenRadius = this.camera.length2screen(circle.radius)
@@ -43,12 +50,6 @@ export default class Screen {
         this.ctx.stroke()
     }
 
-    resetCamera() {
-        this.play([
-            new Shift(this.camera, new Vector(0, 0)),
-            new AnimateValue((v) => this.camera.setZoom(v), this.camera.zoom, 5)
-        ])
-    }
 
     drawLine(line) {
         const thickness = this.camera.length2screen(line.strokeWidth)
@@ -82,6 +83,18 @@ export default class Screen {
         this.ctx.stroke()
     }
 
+    drawCurve(curve) {
+        const screenPoints = curve.points.map(point => this.camera.coords2screen(add(point, curve.position)))
+        this.ctx.strokeStyle = curve.color
+        this.ctx.lineWidth = this.camera.length2screen(curve.strokeWidth)
+        this.ctx.beginPath()
+        this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
+        for (let i = 1; i < screenPoints.length; i++) {
+            this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+        }
+        this.ctx.stroke()
+    }
+
     draw(phobject) {
         if (phobject instanceof Circle) {
             this.drawCircle(phobject)
@@ -89,7 +102,12 @@ export default class Screen {
             this.drawLine(phobject)
         } else if (phobject instanceof Polygon) {
             this.drawPolygon(phobject)
+        } else if (phobject instanceof Curve) {
+            this.drawCurve(phobject)
         }
+        phobject.phobjects.forEach(phobject => {
+            this.draw(phobject)
+        })
     }
 
     add(phobject) {

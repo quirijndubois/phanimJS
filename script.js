@@ -1,5 +1,5 @@
 import Screen from "./screen.js"
-import { Circle, Line, Polygon } from "./phobject.js"
+import { Circle, Line, Polygon, Curve, FunctionGraph } from "./phobject.js"
 import { Vector } from "./vector.js"
 import { Shift, Create, AnimateValue } from "./animation.js"
 
@@ -7,19 +7,11 @@ import { Shift, Create, AnimateValue } from "./animation.js"
 const canvas = document.getElementById('canvas')
 const s = new Screen(canvas)
 
-s.play([
-    new Create(new Line(new Vector(s.camera.left, 0), new Vector(s.camera.right, 0), 0.01), 30),
-    new Create(new Line(new Vector(0, s.camera.top), new Vector(0, s.camera.bottom), 0.01), 30)
-])
+let curve1 = new FunctionGraph().setPosition(new Vector(0, 0))
 
-let circle = new Circle()
 
-s.play(new Create(circle))
+s.add(curve1)
 
-function update(s) {
-    s.play(new Shift(circle, s.GlobalMousePosition))
-}
-
-s.addClickUpdater(update)
+s.play(new Shift(curve1, new Vector(1, 0)))
 
 s.run()
