@@ -88,10 +88,32 @@ export default class Screen {
         this.ctx.strokeStyle = curve.color
         this.ctx.lineWidth = this.camera.length2screen(curve.strokeWidth)
         this.ctx.beginPath()
-        this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
-        for (let i = 1; i < screenPoints.length; i++) {
-            this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+
+
+        const factor = curve.factor
+        if (factor < 1) {
+            const lastIndex = (screenPoints.length) * factor
+            const leftOverFactor = lastIndex - Math.floor(lastIndex)
+
+            this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
+            for (let i = 1; i < screenPoints.length; i++) {
+                if (i <= lastIndex) {
+                    this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+                }
+                else {
+                    const point = lerp2d(screenPoints[i - 1], screenPoints[i], leftOverFactor)
+                    this.ctx.lineTo(point.x, point.y)
+                    break
+                }
+            }
         }
+        else {
+            this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
+            for (let i = 1; i < screenPoints.length; i++) {
+                this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+            }
+        }
+
         this.ctx.stroke()
     }
 
@@ -256,10 +278,12 @@ export default class Screen {
         })
 
         window.addEventListener('keydown', e => {
-            if (e.key == 'r') {
+            if (e.key == 'c') {
                 this.resetCamera()
             }
+            if (e.key == 'r') {
+                window.location.reload()
+            }
         })
-
     }
 }

@@ -1,5 +1,5 @@
 import { Vector } from "./vector.js"
-import { lerp } from "./functions.js"
+import { cloneObject, lerp, lerp2d } from "./functions.js"
 
 export class Phobject {
     constructor(position = new Vector(0, 0), color = 'white', scale = 1) {
@@ -7,6 +7,7 @@ export class Phobject {
         this.color = color
         this.scale = scale
         this.phobjects = []
+        this.factor = 1
         this.set()
     }
 
@@ -69,6 +70,20 @@ export class Curve extends Phobject {
         this.color = color
         this.strokeWidth = strokeWidth
     }
+
+    createFunction(t) {
+        this.factor = t
+    }
+
+    transformFunction(OldPhobject, TargetPhobject, progress) {
+        for (let i = 0; i < this.points.length; i++) {
+            const oldPoint = OldPhobject.points[i]
+            const targetPoint = TargetPhobject.points[i]
+
+            const newPoint = lerp2d(oldPoint, targetPoint, progress)
+            this.points[i] = newPoint
+        }
+    }
 }
 
 export class FunctionGraph extends Phobject {
@@ -85,12 +100,22 @@ export class FunctionGraph extends Phobject {
 
     set() {
         this.phobjects = []
-        const points = []
+        this.points = []
         for (let i = 0; i < this.resolution; i++) {
             const x = lerp(this.xRange[0], this.xRange[1], i / this.resolution)
             const y = lerp(this.yRange[0], this.yRange[1], this.graphFunction(x))
-            points.push(new Vector(x, y))
+            this.points.push(new Vector(x, y))
         }
-        this.phobjects.push(new Curve(this.position, points, this.color, this.strokeWidth))
+        this.phobjects.push(new Curve(this.position, this.points, this.color, this.strokeWidth))
+    }
+
+    createFunction(t) {
+        this.factor = t
+        this.set()
+        this.phobjects[0].createFunction(t)
+    }
+
+    transformFunction(OldPhobject, TargetPhobject, progress) {
+        this.phobjects[0].transformFunction(OldPhobject.phobjects[0], TargetPhobject.phobjects[0], progress)
     }
 }

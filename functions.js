@@ -1,5 +1,15 @@
 import { Vector } from "./vector.js"
 
+export function cloneObject(obj) {
+    const clone = {};
+    for (const key in obj) {
+        if (typeof obj[key] !== 'function') {
+            clone[key] = obj[key];
+        }
+    }
+    return clone;
+}
+
 export function mapRange(value, fromLow, fromHigh, toLow, toHigh) {
     return (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow
 }

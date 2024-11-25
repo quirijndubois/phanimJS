@@ -1,4 +1,4 @@
-import { lerp, lerp2d, qlerp } from "./functions.js"
+import { cloneObject, lerp, lerp2d, qlerp } from "./functions.js"
 
 export class Animation {
     mode = 'none'
@@ -69,5 +69,24 @@ export class AnimateValue extends Animation {
         let progress = this.frame / this.duration
         progress = this.animationFunction(this.start, this.end, progress)
         this.valueFunction(progress)
+    }
+}
+
+export class Transform extends Animation {
+    constructor(phobject, target, duration = 60) {
+        super(duration)
+        this.phobject = phobject
+        this.OldPhobject = cloneObject(phobject)
+        this.TargetPhobject = target
+        this.animationFunction = qlerp
+    }
+
+    update() {
+        if (this.frame < this.duration) {
+            this.frame++
+        }
+        let progress = this.frame / this.duration
+        progress = this.animationFunction(progress)
+        this.phobject.transformFunction(this.OldPhobject, this.TargetPhobject, progress)
     }
 }
