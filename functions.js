@@ -29,3 +29,20 @@ export function qlerp(t) {
 export function slerp(t) {
     return Math.sin(t * Math.PI - Math.PI / 2) / 2 + 0.5
 }
+
+export function round_to_power_of_2(value) {
+    const log_value = Math.log2(Math.abs(value))
+    const rounded_log = Math.ceil(log_value)
+    const result = 2 ** rounded_log
+    return {
+        closest: result,
+        distance: rounded_log - log_value
+    }
+}
+
+export function tupleToRGB(t) {
+    if (t.length != 3) {
+        return t
+    }
+    return `rgb(${t[0]}, ${t[1]}, ${t[2]})`
+}
