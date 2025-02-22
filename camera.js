@@ -54,6 +54,10 @@ export default class Camera {
         return mapRange(length, 0, 2 * this.zoom, 0, this.width)
     }
 
+    screen2length(length) {
+        return mapRange(length, 0, this.width, 0, 2 * this.zoom)
+    }
+
     calculateBounds() {
         this.left = this.position.x - this.zoom
         this.right = this.position.x + this.zoom
