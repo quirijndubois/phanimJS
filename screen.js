@@ -1,7 +1,7 @@
 import { Vector, add, sub } from "./vector.js"
 import Camera from "./camera.js"
 import { Circle, Line, Polygon, Curve } from "./phobject.js"
-import { lerp2d } from "./functions.js"
+import { lerp2d, tupleToRGB } from "./functions.js"
 import { Shift, Create, AnimateValue } from "./animation.js"
 
 
@@ -52,6 +52,9 @@ export default class Screen {
 
 
     drawLine(line) {
+
+        const color = tupleToRGB(line.color)
+
         const thickness = this.camera.length2screen(line.strokeWidth)
 
         const start = add(line.start, line.position)
@@ -60,7 +63,7 @@ export default class Screen {
 
         const screenStart = this.camera.coords2screen(start)
         const screenEnd = this.camera.coords2screen(end)
-        this.ctx.strokeStyle = line.color
+        this.ctx.strokeStyle = color
         this.ctx.lineWidth = thickness
         this.ctx.beginPath()
         this.ctx.moveTo(screenStart.x, screenStart.y)
