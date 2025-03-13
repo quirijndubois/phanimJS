@@ -148,7 +148,6 @@ export default class Screen {
         }
     }
 
-
     updateAnimations() {
         if (this.animations.length == 0) {
             return
@@ -186,8 +185,8 @@ export default class Screen {
         })
     }
 
-    addUpdater(updater) {
-        this.updaters.push(updater)
+    addUpdater(updater, substeps = 1) {
+        this.updaters.push([updater, substeps])
     }
 
     addClickUpdater(updater) {
@@ -196,7 +195,13 @@ export default class Screen {
 
     handleUpdaters() {
         this.updaters.forEach(updater => {
-            updater(this)
+            const substeps = updater[1]
+
+            this.dt = (1/60) / substeps
+
+            for (let i = 0; i < substeps; i++) {
+                updater[0](this)
+            }
         })
     }
 
