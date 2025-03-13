@@ -4,6 +4,11 @@ import { cloneObject, lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
 export class Phobject {
     constructor(position = new Vector(0, 0), color = 'white', scale = 1) {
         this.position = position
+        this.velocity = new Vector(0, 0)
+        this.acceleration = new Vector(0, 0)
+        this.force = new Vector(0, 0)
+        this.mass = 1
+
         this.color = color
         this.scale = scale
         this.phobjects = []
@@ -30,6 +35,25 @@ export class Phobject {
 
     set() {
         this.phobjects = []
+    }
+
+    addForce(force) {
+        this.force.x += force.x
+        this.force.y += force.y
+    }
+
+    eulerODESover(dt) {
+        this.acceleration.x = this.force.x / this.mass
+        this.acceleration.y = this.force.y / this.mass
+        
+        this.velocity.x += this.acceleration.x * dt
+        this.velocity.y += this.acceleration.y * dt
+
+        this.position.x += this.velocity.x * dt
+        this.position.y += this.velocity.y * dt
+
+        this.force.x = 0
+        this.force.y = 0
     }
 }
 
@@ -98,12 +122,27 @@ export class LiveGrid extends Phobject {
 }
 
 export class Circle extends Phobject {
-    constructor(position = new Vector(0, 0), radius = .5, fillColor = 'white', strokeColor = 'red', strokeWidth = .05) {
+    constructor(position = new Vector(0, 0), radius = 1, fillColor = 'white', strokeColor = 'red', strokeWidth = .05) {
         super(position)
         this.radius = radius
         this.fillColor = fillColor
         this.strokeColor = strokeColor
         this.strokeWidth = strokeWidth
+    }
+
+    createFunction(t) {
+        this.factor = t
+    }
+}
+
+export class Node extends Circle {
+    constructor(position = new Vector(0, 0), radius = .2, fillColor = 'black', strokeColor = 'white', strokeWidth = .05) {
+        super(position, radius, fillColor, strokeColor, strokeWidth)
+        this.actualRadius = radius
+    }
+
+    createFunction(t) {
+        this.radius = lerp(0, this.actualRadius, t)
     }
 }
 
@@ -166,7 +205,7 @@ export class FunctionGraph extends Phobject {
     set() {
         this.phobjects = []
         this.points = []
-        for (let i = 0; i < this.resolution; i++) {
+        for (let i = 0; i < this.resolution + 1; i++) {
             const x = lerp(this.xRange[0], this.xRange[1], i / this.resolution)
             const y = lerp(this.yRange[0], this.yRange[1], this.graphFunction(x))
             this.points.push(new Vector(x, y))
