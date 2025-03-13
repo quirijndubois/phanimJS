@@ -15,6 +15,12 @@ let c0 = new Node(new Vector(0,0))
 let c1 = new Node(new Vector(1,0))
 let c2 = new Node(new Vector(2,0))
 
+let l1 = new Line(c0.position, c1.position)
+let l2 = new Line(c1.position, c2.position)
+
+s.add(l1)
+s.add(l2)
+
 s.add(c0)
 s.add(c1)
 s.add(c2)
