@@ -46,3 +46,13 @@ export function tupleToRGB(t) {
     }
     return `rgb(${t[0]}, ${t[1]}, ${t[2]})`
 }
+
+export function calulateSpringForce(base,position,targetLength,springConstant) {
+    const diff = base.sub(position)
+    const diff_length = diff.magnitude()
+    const diff_norm = diff.mult(1 / diff_length)
+    const force_strength = -springConstant * (targetLength - diff_length)
+    const force = diff_norm.mult(force_strength)
+
+    return force
+}
