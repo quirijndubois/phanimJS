@@ -15,8 +15,8 @@ let c0 = new Node(new Vector(0,0))
 let c1 = new Node(new Vector(1,0))
 let c2 = new Node(new Vector(2,0))
 
-let l1 = new Line(c0.position, c1.position)
-let l2 = new Line(c1.position, c2.position)
+let l1 = new Line(c0.position, c1.position, .1)
+let l2 = new Line(c1.position, c2.position, .1)
 
 s.add(l1)
 s.add(l2)
@@ -24,7 +24,7 @@ s.add(l2)
 s.add(c0)
 s.add(c1)
 s.add(c2)
-s.play([new Create(c0), new Create(c1), new Create(c2)])
+s.play([new Create(c0, 30), new Create(l1, 60), new Create(c1, 90), new Create(l2, 120), new Create(c2, 150)])
 
 s.addUpdater(s => {
     const g = new Vector(0, -9.81)
