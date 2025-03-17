@@ -245,7 +245,8 @@ export default class Screen {
             }
 
             if(this.interactivePhobjects[i].dragging){
-                this.interactivePhobjects[i].position = this.GlobalMousePosition.add(this.interactivePhobjects[i].draggingOffset)
+                this.interactivePhobjects[i].setPosition(this.GlobalMousePosition.add(this.interactivePhobjects[i].draggingOffset))
+                this.interactivePhobjects[i].velocity = new Vector(0,0)
             }
         }
     }
