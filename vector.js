@@ -24,8 +24,16 @@ export class Vector {
         return new Vector(this.x * factor, this.y * factor)
     }
 
+    dot(vector) {
+        return this.x * vector.x + this.y * vector.y
+    }
+
     normalize() {
         return this.mult(1 / this.magnitude())
+    }
+
+    distance(vector) {
+        return Math.sqrt((this.x - vector.x) * (this.x - vector.x) + (this.y - vector.y) * (this.y - vector.y))
     }
 }
 
