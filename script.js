@@ -12,8 +12,10 @@ s.add(grid)
 s.addUpdater(s => grid.update(s))
 
 let c0 = new Node(new Vector(0,0))
-let c1 = new Node(new Vector(1,0))
-let c2 = new Node(new Vector(2,0))
+let c1 = new Node(new Vector(0,1))
+let c2 = new Node(new Vector(0,2))
+
+c2.velocity = new Vector(0.001, 0)
 
 let l1 = new Line(c0.position, c1.position, .1)
 let l2 = new Line(c1.position, c2.position, .1)
@@ -36,7 +38,7 @@ s.addUpdater(s => {
     l1.setEnds(c0.position, c1.position)
     l2.setEnds(c1.position, c2.position)
     const g = new Vector(0, -9.81)
-    const k = 1e6
+    const k = 1e7
 
     c1.addForce(g)
     c2.addForce(g)
@@ -49,7 +51,7 @@ s.addUpdater(s => {
     c2.eulerODESover(s.dt)
 
 
-},100
+},1000
 )
 
 s.run()
