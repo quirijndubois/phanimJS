@@ -24,11 +24,19 @@ s.add(l2)
 s.add(c0)
 s.add(c1)
 s.add(c2)
+
+s.makeInteractive(c0)
+s.makeInteractive(c1)
+s.makeInteractive(c2)
+
 s.play([new Create(c0, 30), new Create(l1, 60), new Create(c1, 90), new Create(l2, 120), new Create(c2, 150)])
 
 s.addUpdater(s => {
+
+    l1.setEnds(c0.position, c1.position)
+    l2.setEnds(c1.position, c2.position)
     const g = new Vector(0, -9.81)
-    const k = 100000
+    const k = 1e6
 
     c1.addForce(g)
     c2.addForce(g)
@@ -39,6 +47,8 @@ s.addUpdater(s => {
 
     c1.eulerODESover(s.dt)
     c2.eulerODESover(s.dt)
+
+
 },100
 )
 
