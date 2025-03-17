@@ -206,6 +206,12 @@ export class Line extends Phobject {
         this.color = color
     }
 
+    setEnds(start, end) {
+        this.start = start
+        this.end = end
+        this.set()
+    }
+
     SDF(point) {
         const a = this.start.add(this.position)
         const b = this.end.add(this.position)
