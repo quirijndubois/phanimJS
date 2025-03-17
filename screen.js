@@ -1,7 +1,7 @@
 import { Vector, add, sub } from "./vector.js"
 import Camera from "./camera.js"
 import { Circle, Line, Polygon, Curve } from "./phobject.js"
-import { lerp2d, tupleToRGB } from "./functions.js"
+import { lerp, lerp2d, tupleToRGB } from "./functions.js"
 import { Shift, Create, AnimateValue } from "./animation.js"
 
 
@@ -16,15 +16,17 @@ export default class Screen {
 
         this.phobjects = []
         this.animations = []
+        this.interactivePhobjects = []
 
         this.updaters = []
         this.clickUpdaters = []
 
         this.camera = new Camera(this.width, this.height)
-
+        
         this.dragging = false
         this.dragStart = null
         this.mousePos = null
+        this.draggingPhobject = false
 
         this.ScreenMousePosition = new Vector(0, 0)
     }
@@ -32,7 +34,7 @@ export default class Screen {
     resetCamera() {
         this.play([
             new Shift(this.camera, new Vector(0, 0)),
-            new AnimateValue((v) => this.camera.setZoom(v), this.camera.zoom, 5)
+            new AnimateValue((v) => this.camera.setZoom(Math.pow(2.718, v)), Math.log(this.camera.zoom), Math.log(5))
         ])
     }
 
@@ -40,8 +42,16 @@ export default class Screen {
         const screenPosition = this.camera.coords2screen(circle.position)
         const screenRadius = this.camera.length2screen(circle.radius)
 
-        this.ctx.fillStyle = circle.fillColor
-        this.ctx.strokeStyle = circle.strokeColor
+        let fillColor = circle.fillColor
+        let strokeColor = circle.strokeColor
+
+        if (circle.hovered) {
+            fillColor = tupleToRGB([0, 0, 0])
+            strokeColor = tupleToRGB([100, 100, 100])
+        }
+
+        this.ctx.fillStyle = fillColor
+        this.ctx.strokeStyle = strokeColor
         this.ctx.lineWidth = this.camera.length2screen(circle.strokeWidth)
 
         this.ctx.beginPath()
@@ -52,8 +62,11 @@ export default class Screen {
 
 
     drawLine(line) {
-
-        const color = tupleToRGB(line.color)
+        
+        let color = tupleToRGB(line.color)
+        if (line.hovered) {
+            color = tupleToRGB([100, 100, 100])
+        }
 
         const thickness = this.camera.length2screen(line.strokeWidth)
 
@@ -130,6 +143,13 @@ export default class Screen {
         } else if (phobject instanceof Curve) {
             this.drawCurve(phobject)
         }
+
+        // we sort all subphobjects by z-index
+        phobject.phobjects.sort((a, b) => {
+            return a.z_index - b.z_index
+        })
+
+        // we recursively draw all subphobjects
         phobject.phobjects.forEach(phobject => {
             this.draw(phobject)
         })
@@ -176,7 +196,7 @@ export default class Screen {
 
     handleScroll(x) {
         this.camera.setZoom(this.camera.zoom * (1 + x / 1000))
-
+        this.camera.setPosition(lerp2d(this.camera.position,this.GlobalMousePosition, -x/1000))
     }
 
     handleClick() {
@@ -205,6 +225,54 @@ export default class Screen {
         })
     }
 
+    makeInteractive(phobject) {
+        this.interactivePhobjects.push(phobject)
+    }
+
+    handleInteractivity() {
+
+        for (let i = 0; i < this.interactivePhobjects.length; i++) {
+
+            if (this.interactivePhobjects[i].dragging) {
+            }
+
+            const distance = this.interactivePhobjects[i].SDF(this.GlobalMousePosition)
+            if (distance < 0){
+                this.interactivePhobjects[i].hovered = true
+            }
+            else {
+                this.interactivePhobjects[i].hovered = false
+            }
+
+            if(this.interactivePhobjects[i].dragging){
+                this.interactivePhobjects[i].position = this.GlobalMousePosition.add(this.interactivePhobjects[i].draggingOffset)
+            }
+        }
+    }
+
+    mouseDownInteractivity() {
+        for (let i = 0; i < this.interactivePhobjects.length; i++) {
+            if (this.interactivePhobjects[i].hovered) {
+                this.interactivePhobjects[i].dragging = true
+                this.interactivePhobjects[i].draggingOffset = this.interactivePhobjects[i].position.sub(this.GlobalMousePosition)
+                this.draggingPhobject = true
+            }
+        }
+    }
+
+    mouseUpInteractivity() {
+        this.draggingPhobject = false
+        for (let i = 0; i < this.interactivePhobjects.length; i++) {
+            this.interactivePhobjects[i].dragging = false
+        }
+    }
+
+    sortPhobjects() {
+        this.phobjects.sort((a, b) => {
+            return a.z_index - b.z_index
+        })
+    }
+
     update() {
         this.LocalMousePosition = this.camera.screen2Local(this.ScreenMousePosition)
         this.GlobalMousePosition = this.camera.screen2Global(this.ScreenMousePosition)
@@ -215,11 +283,15 @@ export default class Screen {
 
         this.clear()
 
+        this.sortPhobjects()
+
+        this.handleInteractivity()
+
         this.phobjects.forEach(phobject => {
             this.draw(phobject)
         })
 
-        if (this.dragging && this.dragStart) {
+        if (this.dragging && this.dragStart && !this.draggingPhobject) {
             const delta = sub(this.dragStart, this.LocalMousePosition)
             this.camera.setPosition(this.cameraDragStart.add(delta))
         }
@@ -260,6 +332,8 @@ export default class Screen {
             this.dragStarted = true
             this.dragStart = this.LocalMousePosition
             this.cameraDragStart = new Vector(this.camera.position.x, this.camera.position.y)
+
+            this.mouseDownInteractivity()
         })
         window.addEventListener('touchstart', e => {
             const touch = e.touches[0]
@@ -275,6 +349,8 @@ export default class Screen {
             this.dragging = false
             this.dragStarted = false
             this.dragStart = null
+
+            this.mouseUpInteractivity()
         })
         window.addEventListener('touchend', e => {
             if (!this.dragging) {
