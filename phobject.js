@@ -2,12 +2,19 @@ import { Vector } from "./vector.js"
 import { cloneObject, lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
 
 export class Phobject {
-    constructor(position = new Vector(0, 0), color = 'white', scale = 1) {
+    constructor(position = new Vector(0, 0), color = 'white', scale = 1, z_index = 0) {
         this.position = position
         this.velocity = new Vector(0, 0)
         this.acceleration = new Vector(0, 0)
         this.force = new Vector(0, 0)
         this.mass = 1
+
+        this.hovered = false
+        this.selected = false
+        this.dragged = false
+        this.draggingOffset = new Vector(0, 0)
+
+        this.z_index = z_index
 
         this.color = color
         this.scale = scale
@@ -42,6 +49,10 @@ export class Phobject {
         this.force.y += force.y
     }
 
+    SDF(point) {
+        throw new Error('SDF not implemented on this object')
+    }
+
     eulerODESover(dt) {
         this.acceleration.x = this.force.x / this.mass
         this.acceleration.y = this.force.y / this.mass
@@ -68,7 +79,42 @@ export class Group extends Phobject {
     }
 }
 
+export class Graph extends Group {
+    constructor(n, edges, lineThickness = .1, nodeRadius = .2) {
+        super()
+        this.n = n
+        this.edges = edges
+        this.lineThickness = lineThickness
+        this.nodeRadius = nodeRadius
+        this.nodeFillColor = 'black'
+        this.nodeStrokeColor = 'white'
+        this.nodeStrokeWidth = .05
+        this.lineColor = 'white'
+        this.setGraph()
+    }
+
+    setGraph(){
+        this.phobjects = []
+        for (let i = 0; i < this.n; i++) {
+            const pos = new Vector(Math.random()*4-2, Math.random()*4-2)
+            this.phobjects.push(new Node(pos, this.nodeRadius, this.nodeFillColor, this.nodeStrokeColor, this.nodeStrokeWidth))
+        }
+        for (let i = 0; i < this.edges.length; i++) {
+            const x = this.phobjects[this.edges[i][0]].position
+            const y = this.phobjects[this.edges[i][1]].position
+            this.phobjects.push(new Line(x,y,this.lineThickness, this.lineColor))
+
+            this.phobjects[this.phobjects.length - 1].z_index = -1
+        }
+    }
+}
+
 export class LiveGrid extends Phobject {
+
+    constructor() {
+        super()
+        this.z_index = -999
+    }
     update(screen) {
         const brightness = 0.5
         const layers = 3
@@ -144,6 +190,10 @@ export class Node extends Circle {
     createFunction(t) {
         this.radius = lerp(0, this.actualRadius, t)
     }
+
+    SDF(point) {
+        return point.distance(this.position) - this.radius - this.strokeWidth/2
+    }
 }
 
 export class Line extends Phobject {
@@ -155,6 +205,19 @@ export class Line extends Phobject {
         this.strokeWidth = strokeWidth
         this.color = color
     }
+
+    SDF(point) {
+        const a = this.start.add(this.position)
+        const b = this.end.add(this.position)
+        const thickness = this.strokeWidth
+
+        let edge = b.sub(a);
+        let ap = point.sub(a);
+        let proj = Math.max(0, Math.min(1, ap.dot(edge) / edge.magSquared()));
+        let closest = a.add(edge.mult(proj));
+        let dist = point.distance(closest);
+        return dist - thickness * 0.5;
+    }
 }
 
 export class Polygon extends Phobject {
@@ -165,6 +228,33 @@ export class Polygon extends Phobject {
         this.strokeColor = strokeColor
         this.strokeWidth = strokeWidth
     }
+
+    SDF(point) {
+        const polygon = this.vertices
+        let minDistSq = Infinity;
+        let inside = false;
+        
+        for (let i = 0; i < polygon.length; i++) {
+            let a = polygon[i];
+            let b = polygon[(i + 1) % polygon.length];
+            
+            let edge = b.sub(a);
+            let ap = point.sub(a);
+            let proj = Math.max(0, Math.min(1, ap.dot(edge) / edge.magSquared()));
+            let closest = a.add(edge.mult(proj));
+            
+            let distSq = point.distance(closest);
+            minDistSq = Math.min(minDistSq, distSq);
+            
+            if ((a.y > point.y) !== (b.y > point.y)) {
+                let t = (point.x - a.x) - (b.x - a.x) * (point.y - a.y) / (b.y - a.y);
+                if (t < 0) inside = !inside;
+            }
+        }
+        let minDist = Math.sqrt(minDistSq);
+        return inside ? -minDist : minDist;
+    }
+
 }
 
 export class Curve extends Phobject {
