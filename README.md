@@ -5,12 +5,12 @@ The js/ts version of Phanim (python).
 Usage with js (like in scenes dir) can be done by using esbuild, thus turning the TypeScript into a importable js file. 
 
 Install esbuild (globally for example)
-```sh
+```bash
 npm i -g esbuild
 ```
 
 compile to the bundle.js file
-```sh
+```bash
 npx esbuild src/index.ts \
   --bundle \
   --format=esm \
@@ -19,6 +19,6 @@ npx esbuild src/index.ts \
 
 Now you can import from that file
 
-```sh
+```bash
 import * as Phanim from dist/bundle.js
 ```
