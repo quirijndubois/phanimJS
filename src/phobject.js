@@ -3,12 +3,21 @@ import { lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
 
 export class Phobject {
     constructor(position = new Vector(0, 0), color = 'white', scale = 1, z_index = 0) {
+
+        // positional physical variables
         this.position = position
         this.velocity = new Vector(0, 0)
-        this.acceleration = new Vector(0, 0)
         this.force = new Vector(0, 0)
         this.mass = 1
 
+        // rotational physical variables
+        this.angle = 0
+        this.moment = 1
+        this.torque = 0
+        this.angularVelocity = 0
+        this.centerOfMass = new Vector(0, 0) // relative to position
+
+        // interactivity
         this.hovered = false
         this.selected = false
         this.dragged = false
@@ -16,15 +25,23 @@ export class Phobject {
 
         this.z_index = z_index
 
+        // visual variables
         this.color = color
         this.scale = scale
         this.phobjects = []
         this.factor = 1
+
         this.set()
     }
 
     setPosition(position) {
         this.position = position
+        this.set()
+        return this
+    }
+
+    setRotation(angle) {
+        this.angle = angle
         this.set()
         return this
     }
@@ -49,22 +66,33 @@ export class Phobject {
         this.force.y += force.y
     }
 
+    addTorque(grabPoint, force) {
+        this.torque += torque
+    }
+
     SDF(point) {
         throw new Error('SDF not implemented on this object')
     }
 
     eulerODESover(dt) {
-        this.acceleration.x = this.force.x / this.mass
-        this.acceleration.y = this.force.y / this.mass
         
-        this.velocity.x += this.acceleration.x * dt
-        this.velocity.y += this.acceleration.y * dt
+        let acceleration = new Vector(
+            this.force.x / this.mass,
+            this.force.y / this.mass
+        );
+        let angularAcceleration = this.torque / this.moment;
 
-        this.position.x += this.velocity.x * dt
-        this.position.y += this.velocity.y * dt
+        this.velocity.x += acceleration.x * dt;
+        this.velocity.y += acceleration.y * dt;
+        this.angularVelocity += angularAcceleration * dt;
 
-        this.force.x = 0
-        this.force.y = 0
+        this.position.x += this.velocity.x * dt;
+        this.position.y += this.velocity.y * dt;
+        this.angle += this.angularVelocity * dt;
+
+        this.force.x = 0;
+        this.force.y = 0;
+        this.torque = 0;
     }
 }
 
