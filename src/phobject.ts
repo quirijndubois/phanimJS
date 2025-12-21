@@ -1,7 +1,33 @@
-import { Vector } from "./vector.js"
-import { lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
+import { Vector } from "./vector"
+import { lerp, lerp2d, round_to_power_of_2 } from "./functions"
+import Camera from "./camera"
+
 
 export class Phobject {
+
+    position: Vector
+    velocity: Vector
+    force: Vector
+    mass: number
+
+    angle: number
+    moment: number
+    torque: number
+    angularVelocity: number
+    centerOfMass: Vector
+
+    hovered: boolean
+    selected: boolean
+    dragged: boolean
+    draggingOffset: Vector
+
+    z_index: number
+
+    color: any
+    scale: number
+    phobjects: any[]
+    factor: number
+
     constructor(position = new Vector(0, 0), color = 'white', scale = 1, z_index = 0) {
 
         // positional physical variables
@@ -34,25 +60,25 @@ export class Phobject {
         this.set()
     }
 
-    setPosition(position) {
+    setPosition(position: Vector) {
         this.position = position
         this.set()
         return this
     }
 
-    setRotation(angle) {
+    setRotation(angle: number) {
         this.angle = angle
         this.set()
         return this
     }
 
-    setColor(color) {
+    setColor(color: any) {
         this.color = color
         this.set()
         return this
     }
 
-    createFunction(t) {
+    createFunction(t: number) {
         this.factor = t
         this.set()
     }
@@ -61,20 +87,20 @@ export class Phobject {
         this.phobjects = []
     }
 
-    addForce(force) {
+    addForce(force : Vector) {
         this.force.x += force.x
         this.force.y += force.y
     }
 
-    addTorque(grabPoint, force) {
-        this.torque += torque
+    addTorque(grabPoint: Vector, force: number) {
+        throw new Error('addTorque not implemented on this object')
     }
 
-    SDF(point) {
+    SDF(point: Vector) {
         throw new Error('SDF not implemented on this object')
     }
 
-    eulerODESover(dt) {
+    eulerODESover(dt: number) {
         
         let acceleration = new Vector(
             this.force.x / this.mass,
@@ -102,13 +128,22 @@ export class Group extends Phobject {
         this.phobjects = phobjects
     }
 
-    add(phobject) {
+    add(phobject: Phobject) {
         this.phobjects.push(phobject)
     }
 }
 
 export class Graph extends Group {
-    constructor(n, edges, lineThickness = .1, nodeRadius = .2) {
+    n: number
+    edges: number[][]
+    lineThickness: number
+    nodeRadius: number
+    nodeFillColor: any
+    nodeStrokeColor: any
+    nodeStrokeWidth: number
+    lineColor: any
+
+    constructor(n: number, edges: number[][], lineThickness = .1, nodeRadius = .2) {
         super()
         this.n = n
         this.edges = edges
@@ -143,7 +178,7 @@ export class LiveGrid extends Phobject {
         super()
         this.z_index = -999
     }
-    update(screen) {
+    update(screen: any) {
         const brightness = 0.5
         const layers = 3
         const thickness = 2
@@ -167,7 +202,7 @@ export class LiveGrid extends Phobject {
         this.draw_grid(camera, step, brightness, thickness)
     }
 
-    draw_grid(camera, step, distance, thickness) {
+    draw_grid(camera: Camera, step: number, distance: number, thickness: number) {
         let left = Math.round(camera.left / step) * step
         let top = Math.round(camera.top / step) * step
         let n = Math.ceil((camera.right - left) / step)
@@ -196,6 +231,11 @@ export class LiveGrid extends Phobject {
 }
 
 export class Circle extends Phobject {
+    radius: number
+    fillColor: any
+    strokeColor: any
+    strokeWidth: number
+
     constructor(position = new Vector(0, 0), radius = 1, fillColor = 'white', strokeColor = 'red', strokeWidth = .05) {
         super(position)
         this.radius = radius
@@ -204,27 +244,34 @@ export class Circle extends Phobject {
         this.strokeWidth = strokeWidth
     }
 
-    createFunction(t) {
+    createFunction(t: number) {
         this.factor = t
     }
 }
 
 export class Node extends Circle {
+    actualRadius: number
     constructor(position = new Vector(0, 0), radius = .2, fillColor = 'black', strokeColor = 'white', strokeWidth = .05) {
         super(position, radius, fillColor, strokeColor, strokeWidth)
         this.actualRadius = radius
     }
 
-    createFunction(t) {
+    createFunction(t: number) {
         this.radius = lerp(0, this.actualRadius, t)
     }
 
-    SDF(point) {
+    SDF(point: Vector) {
         return point.distance(this.position) - this.radius - this.strokeWidth/2
     }
 }
 
 export class Line extends Phobject {
+    start: Vector
+    end: Vector
+    length: number
+    strokeWidth: number
+    color: any
+
     constructor(start = new Vector(0, 0), end = new Vector(1, 0), strokeWidth = .05, color = [255, 255, 255]) {
         super()
         this.length = length
@@ -234,13 +281,13 @@ export class Line extends Phobject {
         this.color = color
     }
 
-    setEnds(start, end) {
+    setEnds(start: Vector, end: Vector) {
         this.start = start
         this.end = end
         this.set()
     }
 
-    SDF(point) {
+    SDF(point: Vector) {
         const a = this.start.add(this.position)
         const b = this.end.add(this.position)
         const thickness = this.strokeWidth
@@ -255,6 +302,10 @@ export class Line extends Phobject {
 }
 
 export class Polygon extends Phobject {
+    vertices: Vector[]
+    fillColor: any
+    strokeColor: any
+    strokeWidth: number
     constructor(position = new Vector(0, 0), vertices = [], fillColor = 'white', strokeColor = 'red', strokeWidth = .05) {
         super(position)
         this.vertices = vertices
@@ -263,7 +314,7 @@ export class Polygon extends Phobject {
         this.strokeWidth = strokeWidth
     }
 
-    SDF(point) {
+    SDF(point: Vector) {
         const polygon = this.vertices
         let minDistSq = Infinity;
         let inside = false;
@@ -292,6 +343,9 @@ export class Polygon extends Phobject {
 }
 
 export class Curve extends Phobject {
+    points: Vector[]
+    color: any
+    strokeWidth: number
     constructor(position = new Vector(0, 0), points = [], color = 'red', strokeWidth = .05) {
         super(position)
         this.points = points
@@ -299,11 +353,11 @@ export class Curve extends Phobject {
         this.strokeWidth = strokeWidth
     }
 
-    createFunction(t) {
+    createFunction(t: number) {
         this.factor = t
     }
 
-    transformFunction(OldPhobject, TargetPhobject, progress) {
+    transformFunction(OldPhobject: any, TargetPhobject: any, progress: number) {
         for (let i = 0; i < this.points.length; i++) {
             const oldPoint = OldPhobject.points[i]
             const targetPoint = TargetPhobject.points[i]
@@ -315,7 +369,15 @@ export class Curve extends Phobject {
 }
 
 export class FunctionGraph extends Phobject {
-    constructor(graphFunction = (x) => Math.sin(x * Math.PI), position = new Vector(0, 0), xRange = [-1, 1], yRange = [0, 1], color = 'red', strokeWidth = .05, resolution = 100) {
+    graphFunction: any
+    xRange: number[]
+    yRange: number[]
+    color: any
+    strokeWidth: number
+    resolution: number
+    points: any
+
+    constructor(graphFunction = (x: number) => Math.sin(x * Math.PI), position = new Vector(0, 0), xRange = [-1, 1], yRange = [0, 1], color = 'red', strokeWidth = .05, resolution = 100) {
         super(position)
         this.graphFunction = graphFunction
         this.xRange = xRange
@@ -323,6 +385,7 @@ export class FunctionGraph extends Phobject {
         this.color = color
         this.strokeWidth = strokeWidth
         this.resolution = resolution
+        this.points = []
         this.set()
     }
 
@@ -337,13 +400,13 @@ export class FunctionGraph extends Phobject {
         this.phobjects.push(new Curve(this.position, this.points, this.color, this.strokeWidth))
     }
 
-    createFunction(t) {
+    createFunction(t: number) {
         this.factor = t
         this.set()
         this.phobjects[0].createFunction(t)
     }
 
-    transformFunction(OldPhobject, TargetPhobject, progress) {
+    transformFunction(OldPhobject: any, TargetPhobject: any, progress: number) {
         this.phobjects[0].transformFunction(OldPhobject.phobjects[0], TargetPhobject.phobjects[0], progress)
     }
 }

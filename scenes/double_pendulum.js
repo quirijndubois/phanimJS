@@ -1,8 +1,4 @@
-import Screen from "../src/screen.js"
-import { Circle, Line, Polygon, Curve, FunctionGraph, LiveGrid,  Node} from "../src/phobject.js"
-import { Vector } from "../src/vector.js"
-import { Shift, Create, AnimateValue } from "../src/animation.js"
-import { calulateSpringForce } from "../src/functions.js"
+import {Screen, LiveGrid, Vector, Node, Line, Create, calulateSpringForce, Animation} from "../dist/bundle.js"
 
 const canvas = document.getElementById('canvas')
 const s = new Screen(canvas)

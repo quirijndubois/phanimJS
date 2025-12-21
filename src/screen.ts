@@ -1,12 +1,38 @@
-import { Vector, add, sub } from "./vector.js"
-import Camera from "./camera.js"
-import { Circle, Line, Polygon, Curve } from "./phobject.js"
-import { lerp, lerp2d, tupleToRGB } from "./functions.js"
-import { Shift, Create, AnimateValue } from "./animation.js"
+import { Vector, add, sub } from "./vector"
+import Camera from "./camera"
+import { Circle, Line, Polygon, Curve } from "./phobject"
+import { lerp, lerp2d, tupleToRGB } from "./functions"
+import { Shift, Create, AnimateValue } from "./animation"
 
 
 export default class Screen {
-    constructor(canvas) {
+    canvas: HTMLCanvasElement
+    ctx: any
+    width: number
+    height: number
+    phobjects: any[]
+    animations: any[]
+    interactivePhobjects: any[]
+    updaters: any[]
+    clickUpdaters: any[]
+    camera: Camera
+
+    dragging = false
+    draggingPhobject = false
+
+    dragStart: Vector | null
+    mousePos: Vector | null
+
+    ScreenMousePosition = new Vector(0, 0)
+    LocalMousePosition = new Vector(0, 0)
+    GlobalMousePosition = new Vector(0, 0)
+    dt = 1/60
+
+    dragStarted = false
+    cameraDragStart = new Vector(0, 0)
+    
+
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
         this.ctx = canvas.getContext('2d')
         canvas.width = window.innerWidth
@@ -17,28 +43,23 @@ export default class Screen {
         this.phobjects = []
         this.animations = []
         this.interactivePhobjects = []
-
         this.updaters = []
         this.clickUpdaters = []
 
-        this.camera = new Camera(this.width, this.height)
-        
-        this.dragging = false
-        this.dragStart = null
-        this.mousePos = null
-        this.draggingPhobject = false
+        this.dragStart = new Vector(0, 0)
+        this.mousePos = new Vector(0, 0)
 
-        this.ScreenMousePosition = new Vector(0, 0)
+        this.camera = new Camera(this.width, this.height)
     }
 
     resetCamera() {
         this.play([
             new Shift(this.camera, new Vector(0, 0)),
-            new AnimateValue((v) => this.camera.setZoom(Math.pow(2.718, v)), Math.log(this.camera.zoom), Math.log(5))
+            new AnimateValue((v: number) => this.camera.setZoom(Math.pow(2.718, v)), Math.log(this.camera.zoom), Math.log(5))
         ])
     }
 
-    drawCircle(circle) {
+    drawCircle(circle : Circle) {
         const screenPosition = this.camera.coords2screen(circle.position)
         const screenRadius = this.camera.length2screen(circle.radius)
 
@@ -61,7 +82,7 @@ export default class Screen {
     }
 
 
-    drawLine(line) {
+    drawLine(line: Line) {
         
         let color = tupleToRGB(line.color)
         if (line.hovered) {
@@ -84,7 +105,7 @@ export default class Screen {
         this.ctx.stroke()
     }
 
-    drawPolygon(polygon) {
+    drawPolygon(polygon: Polygon) {
         const screenPoints = polygon.vertices.map(point => this.camera.coords2screen(point))
         this.ctx.fillStyle = polygon.fillColor
         this.ctx.beginPath()
@@ -99,7 +120,7 @@ export default class Screen {
         this.ctx.stroke()
     }
 
-    drawCurve(curve) {
+    drawCurve(curve: Curve) {
         const screenPoints = curve.points.map(point => this.camera.coords2screen(add(point, curve.position)))
         this.ctx.strokeStyle = curve.color
         this.ctx.lineWidth = this.camera.length2screen(curve.strokeWidth)
@@ -133,7 +154,7 @@ export default class Screen {
         this.ctx.stroke()
     }
 
-    draw(phobject) {
+    draw(phobject: any) {
         if (phobject instanceof Circle) {
             this.drawCircle(phobject)
         } else if (phobject instanceof Line) {
@@ -145,21 +166,21 @@ export default class Screen {
         }
 
         // we sort all subphobjects by z-index
-        phobject.phobjects.sort((a, b) => {
+        phobject.phobjects.sort((a: any, b: any) => {
             return a.z_index - b.z_index
         })
 
         // we recursively draw all subphobjects
-        phobject.phobjects.forEach(phobject => {
-            this.draw(phobject)
+        phobject.phobjects.forEach((subPhobject: any) => {
+            this.draw(subPhobject)
         })
     }
 
-    add(phobject) {
+    add(phobject: any) {
         this.phobjects.push(phobject)
     }
 
-    play(animation) {
+    play(animation: any) {
         if (animation instanceof Array) {
             this.animations.push(animation)
         }
@@ -172,7 +193,7 @@ export default class Screen {
         if (this.animations.length == 0) {
             return
         }
-        this.animations[0].forEach(animation => {
+        this.animations[0].forEach( (animation : any) => {
             animation.update()
 
             if (animation.mode == 'add') {
@@ -194,7 +215,7 @@ export default class Screen {
         this.ctx.clearRect(0, 0, this.width, this.height)
     }
 
-    handleScroll(x) {
+    handleScroll(x: number) {
         this.camera.setZoom(this.camera.zoom * (1 + x / 1000))
         this.camera.setPosition(lerp2d(this.camera.position,this.GlobalMousePosition, -x/1000))
     }
@@ -205,11 +226,11 @@ export default class Screen {
         })
     }
 
-    addUpdater(updater, substeps = 1) {
+    addUpdater(updater: Function, substeps = 1) {
         this.updaters.push([updater, substeps])
     }
 
-    addClickUpdater(updater) {
+    addClickUpdater(updater: Function) {
         this.clickUpdaters.push(updater)
     }
 
@@ -225,7 +246,7 @@ export default class Screen {
         })
     }
 
-    makeInteractive(phobject) {
+    makeInteractive(phobject: any) {
         this.interactivePhobjects.push(phobject)
     }
 
