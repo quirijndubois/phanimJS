@@ -1,5 +1,5 @@
 import { Vector } from "./vector.js"
-import { cloneObject, lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
+import { lerp, lerp2d, round_to_power_of_2 } from "./functions.js"
 
 export class Phobject {
     constructor(position = new Vector(0, 0), color = 'white', scale = 1, z_index = 0) {
