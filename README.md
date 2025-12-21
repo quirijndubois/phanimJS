@@ -9,12 +9,13 @@ Install esbuild (globally for example)
 npm i -g esbuild
 ```
 
-compile to the bundle.js file
+compile to the bundle.js file (witch watch mode on in this example)
 ```bash
 npx esbuild src/index.ts \
   --bundle \
+  --outfile=dist/my-library.js \
   --format=esm \
-  --outfile=dist/bundle.js
+  --watch
 ```
 
 Now you can import from that file
