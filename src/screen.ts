@@ -1,6 +1,6 @@
 import { Vector, add, sub } from "./vector"
 import Camera from "./camera"
-import { Circle, Line, Polygon, Curve } from "./phobject"
+import { Circle, Line, Polygon, Curve, Phobject, Bezier } from "./phobjects/phobject"
 import { lerp, lerp2d, tupleToRGB } from "./functions"
 import { Shift, Create, AnimateValue } from "./animation"
 
@@ -20,7 +20,7 @@ export default class Screen {
     dragging = false
     draggingPhobject = false
 
-    dragStart: Vector | null
+    dragStart: null | Vector
     mousePos: Vector | null
 
     ScreenMousePosition = new Vector(0, 0)
@@ -46,7 +46,7 @@ export default class Screen {
         this.updaters = []
         this.clickUpdaters = []
 
-        this.dragStart = new Vector(0, 0)
+        this.dragStart = null
         this.mousePos = new Vector(0, 0)
 
         this.camera = new Camera(this.width, this.height)
@@ -154,6 +154,22 @@ export default class Screen {
         this.ctx.stroke()
     }
 
+    drawBezier(bezier: Bezier) {
+        const screenA = this.camera.coords2screen(bezier.a)
+        const screenB = this.camera.coords2screen(bezier.b)
+        const screenC = this.camera.coords2screen(bezier.c)
+        const screenD = this.camera.coords2screen(bezier.d)
+
+        const thickness = this.camera.length2screen(bezier.strokeWidth)
+        this.ctx.strokeStyle = bezier.color
+        this.ctx.lineWidth = thickness
+
+        this.ctx.beginPath()
+        this.ctx.moveTo(screenA.x, screenA.y)
+        this.ctx.bezierCurveTo(screenB.x, screenB.y, screenC.x, screenC.y, screenD.x, screenD.y)
+        this.ctx.stroke()
+    }
+
     draw(phobject: any) {
         if (phobject instanceof Circle) {
             this.drawCircle(phobject)
@@ -163,6 +179,8 @@ export default class Screen {
             this.drawPolygon(phobject)
         } else if (phobject instanceof Curve) {
             this.drawCurve(phobject)
+        } else if (phobject instanceof Bezier) {
+            this.drawBezier(phobject)
         }
 
         // we sort all subphobjects by z-index
@@ -272,6 +290,16 @@ export default class Screen {
         }
     }
 
+    getHoveredPhobjects(): Phobject[] {
+        const hoveredPhobjects: Phobject[] = []
+        for (let i = 0; i < this.interactivePhobjects.length; i++) {
+            if (this.interactivePhobjects[i].hovered) {
+                hoveredPhobjects.push(this.interactivePhobjects[i])
+            }
+        }
+        return hoveredPhobjects
+    }
+
     mouseDownInteractivity() {
         for (let i = 0; i < this.interactivePhobjects.length; i++) {
             if (this.interactivePhobjects[i].hovered) {
@@ -287,6 +315,20 @@ export default class Screen {
         for (let i = 0; i < this.interactivePhobjects.length; i++) {
             this.interactivePhobjects[i].dragging = false
         }
+    }
+
+    triggerLeftClick() {
+        const hoveredPhobjects = this.getHoveredPhobjects()
+        this.phobjects.forEach(phobject => {
+            phobject.leftClick(hoveredPhobjects, this.GlobalMousePosition)
+        })
+    }
+
+    triggerRightClick() {
+        const hoveredPhobjects = this.getHoveredPhobjects()
+        this.phobjects.forEach(phobject => {
+            phobject.rightClick(hoveredPhobjects, this.GlobalMousePosition)
+        })
     }
 
     sortPhobjects() {
@@ -351,6 +393,8 @@ export default class Screen {
         })
 
         window.addEventListener('mousedown', e => {
+
+
             this.dragStarted = true
             this.dragStart = this.LocalMousePosition
             this.cameraDragStart = new Vector(this.camera.position.x, this.camera.position.y)
@@ -365,8 +409,16 @@ export default class Screen {
         })
 
         window.addEventListener('mouseup', e => {
+
             if (!this.dragging) {
                 this.handleClick()
+                
+                if (e.button === 0) {
+                    this.triggerLeftClick()
+                }
+                else if (e.button === 2) {
+                    this.triggerRightClick()
+                }
             }
             this.dragging = false
             this.dragStarted = false
