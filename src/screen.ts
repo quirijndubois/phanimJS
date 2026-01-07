@@ -112,11 +112,20 @@ export default class Screen {
 		this.ctx.strokeStyle = polygon.strokeColor
 		this.ctx.lineWidth = this.camera.length2screen(polygon.strokeWidth)
 		this.ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
-		for (let i = 1; i < screenPoints.length; i++) {
-
+		const intFactor = screenPoints.length * polygon.factor
+		const lastFactor = intFactor - Math.floor(intFactor)
+		for (let i = 1; i < intFactor; i++) {
 			this.ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
 		}
-		this.ctx.lineTo(screenPoints[0].x, screenPoints[0].y)
+		if (intFactor < screenPoints.length) {
+			const lastPointx = lerp(screenPoints[Math.floor(intFactor)].x, screenPoints[(Math.floor(intFactor) + 1) % screenPoints.length].x, lastFactor)
+			const lastPointy = lerp(screenPoints[Math.floor(intFactor)].y, screenPoints[(Math.floor(intFactor) + 1) % screenPoints.length].y, lastFactor)
+			this.ctx.lineTo(lastPointx, lastPointy)
+		}
+		else {
+			this.ctx.lineTo(screenPoints[0].x, screenPoints[0].y)
+		}
+
 		this.ctx.fill()
 		this.ctx.stroke()
 	}
